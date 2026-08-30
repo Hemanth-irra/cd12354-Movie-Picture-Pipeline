@@ -116,4 +116,5 @@ jobs:
         run: pipenv run test
 
       - name: Build Docker image
-        run: docker build --tag mp-backend:${{ github.sha }} .cd "C:\Users\Hemanth Irra\Desktop\devops_project\cd12354-Movie-Picture-Pipeline"
+        working-directory: starter/backend
+        run: docker build -t mp-backend:${{ github.sha }} .cd "C:\Users\Hemanth Irra\Desktop\devops_project\cd12354-Movie-Picture-Pipeline"
