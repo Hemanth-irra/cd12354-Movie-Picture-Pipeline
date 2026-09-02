@@ -1,0 +1,62 @@
+name: Backend CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "starter/backend/**"
+      - ".github/workflows/backend-cd.yaml"
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build backend image
+        run: |
+          docker build \
+            -t ${{ steps.login-ecr.outputs.registry }}/movie-backend:${{ github.sha }} \
+            ./starter/backend
+
+      - name: Push backend image
+        run: |
+          docker push \
+            ${{ steps.login-ecr.outputs.registry }}/movie-backend:${{ github.sha }}
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --region us-east-1 \
+            --name cluster
+
+      - name: Update backend deployment
+        run: |
+          sed -i "s|image:.*|image: ${{ steps.login-ecr.outputs.registry }}/movie-backend:${{ github.sha }}|" \
+            starter/backend/k8s/deployment.yaml
+
+      - name: Deploy backend
+        run: |
+          kubectl apply -k ./starter/backend/k8s
+
+      - name: Verify backend
+        run: |
+          kubectl rollout status deployment/backend --timeout=180s
+          kubectl get pods
+          kubectl get svc backend
