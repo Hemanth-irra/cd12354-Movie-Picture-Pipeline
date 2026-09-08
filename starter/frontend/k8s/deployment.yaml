@@ -1,21 +1,32 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: frontend
   labels:
     app: frontend
+
 spec:
   replicas: 1
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+
   selector:
     matchLabels:
       app: frontend
+
   template:
     metadata:
       labels:
         app: frontend
+
     spec:
       containers:
         - name: frontend
-          image: frontend
+          image: 422509704241.dkr.ecr.us-east-1.amazonaws.com/movie-frontend:latest
           ports:
             - containerPort: 3000
