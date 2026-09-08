@@ -10,12 +10,17 @@ on:
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -28,13 +33,12 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      
       - name: Build frontend image
         run: |
           docker build \
             --build-arg REACT_APP_MOVIE_API_URL=http://${{ secrets.BACKEND_HOSTNAME }} \
             -t ${{ steps.login-ecr.outputs.registry }}/movie-frontend:${{ github.sha }} \
-             ./starter/frontend
+            ./starter/frontend
 
       - name: Push frontend image
         run: |
