@@ -6,6 +6,11 @@ metadata:
     app: backend
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: backend
@@ -16,6 +21,6 @@ spec:
     spec:
       containers:
         - name: backend
-          image: backend
+          image: 422509704241.dkr.ecr.us-east-1.amazonaws.com/movie-backend:latest
           ports:
             - containerPort: 5000
